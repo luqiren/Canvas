@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>接元宝</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            width: 100%;
+            height: 100%;
+        }
+        #canvas {
+            margin-left: 100px;
+        }
+        #score {
+            margin-left: 100px;
+            width: 700px;
+            text-align: center;
+            padding: 10px;
+            height: 50px;
+            box-sizing: border-box;
+            font-weight: normal;
+            color: orangered;
+        }
+        img {
+            position: absolute;
+            left: -100000px;
+        }
+    </style>
+    <script>
+        var ctx;
+        var peopleImg;
+        var boomImg;
+        var yuanbao;
+        var people = new People(100, 819, 10, 60, 81);
+        var moneyArray = new Array();
+
+        function People (x, y, speed, w, h) {
+            this.x = x;
+            this.y = y;
+            this.speed = speed;
+            this.w = w;
+            this.h = h;
+            this.isLive = true;
+            this.score = 0;
+
+            this.moveLeft = function () {
+                this.x = this.x - this.speed < 0 ? 0 : this.x - this.speed;
+            }
+
+            this.moveRight = function () {
+                this.x = this.x + this.speed + this.w > 700 ? 700 : this.x + this.speed;
+            }
+        }
+
+        function Money (x, y, speed, w, h) {
+            this.x = x;
+            this.y = y;
+            this.speed = speed;
+            this.w = w;
+            this.h = h;
+            this.isLive = true;
+            this.timer = null;
+            this.score = 5;
+            
+            this.run = function () {
+                if (this.y > 900) {
+                    window.clearInterval(this.timer);
+                    this.isLive = false;
+                } else {
+                    this.y += this.speed;
+                }
+            }
+        }
+
+        function moneyFactory() {
+            var money = new Money(Math.random() * (700 - 32), 0, 5, 40, 40);
+            moneyArray.push(money);
+            window.setInterval('moneyArray[' + (moneyArray.length - 1) + '].run()', 50);
+        }
+
+        function boom (x, y, speed, w, h) {
+
+        }
+
+        function flashMap () {
+            ctx.fillStyle = '#eee';
+            ctx.fillRect(0, 0, 700, 900);
+
+            drawPeople(people);
+
+            catchMoney();
+            drawMoney();
+        }
+
+        function drawPeople (people) {
+            ctx.drawImage(peopleImg, 0, 0, 780, 1070, people.x, people.y, people.w, people.h)
+        }
+
+        function drawMoney () {
+            moneyArray.forEach(function(item) {
+                if (item.isLive) {
+                    ctx.drawImage(yuanbao, 0, 0, 512, 512, item.x, item.y, item.w, item.h)
+                }
+            })
+        }
+
+        // 获得礼物
+        function catchMoney () {
+            moneyArray.forEach(function(item) {
+                if (item.isLive) {
+                    /** 判断礼物有没有进入小人范围 */
+                    if (item.x + (item.w / 2) <= people.x + people.w && item.x + (item.w / 2) >= people.x && item.y + (item.h / 2) <= people.y + people.h && item.y + (item.h / 2) >= people.y) {
+                        people.score += item.score;
+                        item.isLive = false;
+                        window.clearInterval(item.timer);
+                        flashScore();
+                    }
+                }
+            })
+        }
+
+        // 刷新积分
+        function flashScore () {
+            var score = document.getElementById('score');
+            score.innerHTML = '积分: ' + people.score;
+        }
+
+        onload = function () {
+            var canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#eee';
+            ctx.fillRect(0, 0, 700, 900);
+
+            peopleImg = document.getElementById('people');
+            yuanbao = document.getElementById('money');
+            boomImg = document.getElementById('boom');
+
+            for (var i = 0; i < 2; i++) {
+                var money = new Money(Math.random() * (700 - 32), 0, 5, 40, 40);
+                moneyArray.push(money);
+                window.setInterval('moneyArray[' + i + '].run()', 50);
+            }
+
+            window.setInterval('moneyFactory()', 5000);
+            window.setInterval('flashMap()', 50)
+        }
+
+        document.onkeydown = function () {
+            var e = event || window.event || arguments.callee.caller.arguments[0];
+            var flag = true;
+            switch (e.keyCode) {
+                case 37:
+                    if (people.x > 0) {
+                        people.moveLeft();
+                    }
+                    break;
+                case 39:
+                    if (people.x + people.w < 700) {
+                        people.moveRight()
+                    }
+                    break;
+                default:
+                    flag = false;
+                    break;
+            }
+            flag && flashMap();
+        }
+    </script>
+</head>
+<body>
+    <h1 id="score">积分: 0</h1>
+    <canvas id="canvas" width="700" height="900"></canvas>
+    <img id="people" src="img/people.png">
+    <img id="money" src="img/liwu.png">
+    <img id="boom" src="img/boom.png">
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+        body {
+            width: 100%;
+            height: 100%;
+        }
+        #ball {
+            position: absolute;
+            left: -10000px;
+            width: 256px;
+            height: 256px;
+        }
+    </style>
+    <script>
+        var ctx;
+        var dis = -2;
+        onload = function () {
+            var canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 720, 720);
+
+            var x = 0;
+            var y = 0;
+            while (x <= 720) {
+                y = 400 - Math.sin(x*Math.PI/180) * 100;
+                ctx.fillStyle="#eee";
+                ctx.beginPath();
+                ctx.arc(x, y, 1, 0, Math.PI*2,true);
+                ctx.closePath();
+                ctx.fill();
+                x += 2;
+            }
+
+            window.setInterval('flashCanvas()',100);
+        }
+        function flashCanvas () {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 720, 720);
+            run();
+        }
+        function run () {
+            dis += 2;
+            if (dis > 720) {
+                dis = 0;
+            }
+            var x = 0;
+            var y = 0;
+            while (x <= 720) {
+                y = 400 - Math.sin((x+dis)*Math.PI/180) * 100;
+                ctx.fillStyle="#eee";
+                ctx.beginPath();
+                ctx.arc(720 - x, y, 1, 0, Math.PI*2,true);
+                ctx.closePath();
+                ctx.fill();
+                x += 2;
+            }
+        }
+    </script>
+</head>
+<body>
+    <canvas id="canvas" width="720" height="720"></canvas>
+</body>
+</html>
