@@ -35,8 +35,11 @@
         var peopleImg;
         var boomImg;
         var yuanbao;
+        var bombImg;
         var people = new People(100, 819, 10, 60, 81);
         var moneyArray = new Array();
+        var boomArray = new Array();
+        var bombArray = new Array();
 
         function People (x, y, speed, w, h) {
             this.x = x;
@@ -76,14 +79,51 @@
             }
         }
 
-        function moneyFactory() {
+        function moneyFactory () {
             var money = new Money(Math.random() * (700 - 32), 0, 5, 40, 40);
             moneyArray.push(money);
             window.setInterval('moneyArray[' + (moneyArray.length - 1) + '].run()', 50);
         }
 
-        function boom (x, y, speed, w, h) {
+        // 炸弹类
+        function Bomb (x, y, speed, w, h) {
+            this.x = x;
+            this.y = y;
+            this.speed = speed;
+            this.w = w;
+            this.h = h;
+            this.isLive = true;
+            this.timer = null;
 
+            this.run = function () {
+                if (this.y > 900) {
+                    window.clearInterval(this.timer);
+                    this.isLive = false;
+                } else {
+                    this.y += this.speed;
+                }
+            }
+        }
+
+        function bombFactory () {
+            var bomb = new Bomb(Math.random() * (700 - 32), 0, 5, 40, 40);
+            bombArray.push(bomb);
+            window.setInterval('bombArray[' + (bombArray.length - 1) + '].run()', 50);
+        }
+
+        // 爆炸类
+        function Boom (x, y) {
+            this.x = x;
+            this.y = y;
+            this.isLive = true;
+            this.blood = 0;
+            this.bloodUp = function () {
+                if (this.blood <= 4) {
+                    this.blood++;
+                } else {
+                    this.isLive = false;
+                }
+            }
         }
 
         function flashMap () {
@@ -93,17 +133,27 @@
             drawPeople(people);
 
             catchMoney();
+
             drawMoney();
+            drawBomb();
         }
 
         function drawPeople (people) {
-            ctx.drawImage(peopleImg, 0, 0, 780, 1070, people.x, people.y, people.w, people.h)
+            ctx.drawImage(peopleImg, 0, 0, 780, 1070, people.x, people.y, people.w, people.h);
         }
 
         function drawMoney () {
             moneyArray.forEach(function(item) {
                 if (item.isLive) {
-                    ctx.drawImage(yuanbao, 0, 0, 512, 512, item.x, item.y, item.w, item.h)
+                    ctx.drawImage(yuanbao, 0, 0, 512, 512, item.x, item.y, item.w, item.h);
+                }
+            })
+        }
+
+        function drawBomb () {
+            bombArray.forEach(function (bomb) {
+                if (bomb.isLive) {
+                    ctx.drawImage(bombImg, 160, 160, 480, 480, bomb.x, bomb.y, bomb.w, bomb.h);
                 }
             })
         }
@@ -123,6 +173,11 @@
             })
         }
 
+        // 接住了炸弹
+        function catchBomb () {
+
+        }
+
         // 刷新积分
         function flashScore () {
             var score = document.getElementById('score');
@@ -137,7 +192,7 @@
 
             peopleImg = document.getElementById('people');
             yuanbao = document.getElementById('money');
-            boomImg = document.getElementById('boom');
+            bombImg = document.getElementById('bomb');
 
             for (var i = 0; i < 2; i++) {
                 var money = new Money(Math.random() * (700 - 32), 0, 5, 40, 40);
@@ -146,6 +201,7 @@
             }
 
             window.setInterval('moneyFactory()', 5000);
+            window.setInterval('bombFactory()', 10000);
             window.setInterval('flashMap()', 50)
         }
 
@@ -176,6 +232,6 @@
     <canvas id="canvas" width="700" height="900"></canvas>
     <img id="people" src="img/people.png">
     <img id="money" src="img/liwu.png">
-    <img id="boom" src="img/boom.png">
+    <img id="bomb" src="img/bomb.png">
 </body>
 </html>
