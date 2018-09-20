@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>迷宫</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+        #ball {
+            position: absolute;
+            left: -10000px;
+        }
+        img {
+            position: absolute;
+            left: -10000px;
+        }
+    </style>
+    <script>
+        var ctx;
+        var ballImg;
+        var brickImg;
+        var mapArray = [
+            [0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 1, 0, 1, 1, 0, 0, 0, 0, 0],
+            [0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 1, 0, 0, 0]
+        ];
+        var size = 40;
+        var ball = new Ball(0, 0);
+
+        function Ball (x, y) {
+            this.x = x;
+            this.y = y;
+
+            this.moveUp = function () {
+                if (this.y === 0 || mapArray[this.y-1][this.x] === 1) {
+                    return;
+                }
+                this.y -= 1;
+            }
+
+            this.moveRight = function () {
+                if (this.x === mapArray[0].length - 1 || mapArray[this.y][this.x+1] === 1) {
+                    return;
+                }
+                this.x += 1;
+            }
+
+            this.moveDown = function () {
+                if (this.y === mapArray.length - 1 || mapArray[this.y+1][this.x] === 1) {
+                    return;
+                }
+                this.y += 1;
+            }
+
+            this.moveLeft = function () {
+                if (this.x === 0 || mapArray[this.y][this.x-1] === 1) {
+                    return;
+                }
+                this.x -= 1;
+            }
+        }
+
+        function drawBall (preX, preY) {
+            // 将原先的小球清掉画新的小球
+            ctx.fillStyle = '#000';
+            ctx.fillRect(preX * size, preY * size, size, size);
+            ctx.drawImage(ballImg, 30, 30, 196, 196, ball.x * size, ball.y * size, size, size);
+            isEnd() && winGame();
+        }
+
+        function drawMap () {
+            for (var y = 0; y < mapArray.length; y++) {
+                for (var x = 0; x < mapArray[y].length; x++) {
+                    mapArray[y][x] === 1 && ctx.drawImage(brickImg, 656, 16, 16, 16, x * size, y * size, size, size);
+                }
+            }
+        }
+
+        function winGame () {
+            document.keydown = function (event) {}
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 400, 400);
+
+            ctx.font = '50px Verdana';
+            var gradient = ctx.createLinearGradient(0, 0, 200, 0);
+            gradient.addColorStop('0', 'magenta');
+            gradient.addColorStop('0.5', 'purple');
+            gradient.addColorStop('1', 'blue');
+
+            ctx.fillStyle = gradient;
+            ctx.fillText('WIN!', 100, 200);
+        }
+
+        function isEnd () {
+            return ball.x === mapArray[0].length - 1  && ball.y === mapArray.length - 1;
+        }
+
+        /** 键盘事件 */
+        document.onkeydown = function (event) {
+            if (isEnd()) {
+                return;
+            }
+            var e = event || window.event || arguments.callee.caller.arguments[0];
+            var flag = true;
+            var preX = ball.x;
+            var preY = ball.y;
+            switch (e.keyCode) {
+                case 38:
+                    ball.moveUp();
+                    break;
+                case 39:
+                    ball.moveRight();
+                    break;
+                case 40:
+                    ball.moveDown();
+                    break;
+                case 37:
+                    ball.moveLeft();
+                    break;
+                default:
+                    flag = false;
+                    break;
+            }
+            flag && drawBall(preX, preY);
+        }
+
+        onload = function () {
+            var canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 400, 400);
+
+            ballImg = document.getElementById('ball');
+            brickImg = document.getElementById('brick');
+
+            drawBall();
+            drawMap();
+        }
+    </script>
+</head>
+<body>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <img id="ball" src="img/ball2.png" alt="">
+    <img id="brick" src="img/brick.png">
+</body>
+</html>
