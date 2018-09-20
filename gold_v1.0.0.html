@@ -17,7 +17,7 @@
         }
         #score {
             margin-left: 100px;
-            width: 700px;
+            width: 400px;
             text-align: center;
             padding: 10px;
             height: 50px;
@@ -36,41 +36,46 @@
         var boomImg;
         var yuanbao;
         var bombImg;
-        var people = new People(100, 819, 10, 60, 81);
+        var people = new People(100, 419, 10, 60, 81);
         var moneyArray = new Array();
         var boomArray = new Array();
         var bombArray = new Array();
+        var moneyTimer;
+        var bombTimer;
+        var flashTimer;
 
-        function People (x, y, speed, w, h) {
+        /** 游戏对象基类 */
+        function GameObject (x, y, speed, w, h) {
             this.x = x;
             this.y = y;
             this.speed = speed;
             this.w = w;
             this.h = h;
             this.isLive = true;
+        }
+
+        function People (x, y, speed, w, h) {
             this.score = 0;
+            this.gameObject = GameObject;
+            this.gameObject(x, y, speed, w, h);
 
             this.moveLeft = function () {
                 this.x = this.x - this.speed < 0 ? 0 : this.x - this.speed;
             }
 
             this.moveRight = function () {
-                this.x = this.x + this.speed + this.w > 700 ? 700 : this.x + this.speed;
+                this.x = this.x + this.speed + this.w > 400 ? 400 : this.x + this.speed;
             }
         }
 
         function Money (x, y, speed, w, h) {
-            this.x = x;
-            this.y = y;
-            this.speed = speed;
-            this.w = w;
-            this.h = h;
-            this.isLive = true;
+            this.gameObject = GameObject;
+            this.gameObject(x, y, speed, w, h);
             this.timer = null;
             this.score = 5;
             
             this.run = function () {
-                if (this.y > 900) {
+                if (this.y > 500) {
                     window.clearInterval(this.timer);
                     this.isLive = false;
                 } else {
@@ -79,24 +84,14 @@
             }
         }
 
-        function moneyFactory () {
-            var money = new Money(Math.random() * (700 - 32), 0, 5, 40, 40);
-            moneyArray.push(money);
-            window.setInterval('moneyArray[' + (moneyArray.length - 1) + '].run()', 50);
-        }
-
-        // 炸弹类
+        /** 炸弹类 */
         function Bomb (x, y, speed, w, h) {
-            this.x = x;
-            this.y = y;
-            this.speed = speed;
-            this.w = w;
-            this.h = h;
-            this.isLive = true;
+            this.gameObject = GameObject;
+            this.gameObject(x, y, speed, w, h);
             this.timer = null;
 
             this.run = function () {
-                if (this.y > 900) {
+                if (this.y > 500) {
                     window.clearInterval(this.timer);
                     this.isLive = false;
                 } else {
@@ -105,13 +100,7 @@
             }
         }
 
-        function bombFactory () {
-            var bomb = new Bomb(Math.random() * (700 - 32), 0, 5, 40, 40);
-            bombArray.push(bomb);
-            window.setInterval('bombArray[' + (bombArray.length - 1) + '].run()', 50);
-        }
-
-        // 爆炸类
+        /** 爆炸类 */
         function Boom (x, y) {
             this.x = x;
             this.y = y;
@@ -126,20 +115,38 @@
             }
         }
 
+        /** 生成礼物类 */
+        function moneyFactory () {
+            var money = new Money(Math.random() * (400 - 32), 0, 5, 40, 40);
+            moneyArray.push(money);
+            window.setInterval('moneyArray[' + (moneyArray.length - 1) + '].run()', 50);
+        }
+
+
+        /** 生成炸弹类 */
+        function bombFactory () {
+            var bomb = new Bomb(Math.random() * (400 - 32), 0, 5, 40, 40);
+            bombArray.push(bomb);
+            window.setInterval('bombArray[' + (bombArray.length - 1) + '].run()', 50);
+        }
+
+        /** 刷新游戏地图 */
         function flashMap () {
             ctx.fillStyle = '#eee';
-            ctx.fillRect(0, 0, 700, 900);
+            ctx.fillRect(0, 0, 400, 500);
 
             drawPeople(people);
 
             catchMoney();
+            catchBomb();
 
             drawMoney();
             drawBomb();
+            drawBoom();
         }
 
         function drawPeople (people) {
-            ctx.drawImage(peopleImg, 0, 0, 780, 1070, people.x, people.y, people.w, people.h);
+            people.isLive && ctx.drawImage(peopleImg, 0, 0, 780, 1070, people.x, people.y, people.w, people.h);
         }
 
         function drawMoney () {
@@ -158,12 +165,24 @@
             })
         }
 
-        // 获得礼物
+        /** 画接住炸弹的爆炸过程 */
+        function drawBoom () {
+            boomArray.forEach(function(boom) {
+                if (boom.isLive) {
+                    ctx.drawImage(boomImg, boom.blood * 64, 0, 64, 64, boom.x, boom.y, people.w, people.h);
+                    boom.bloodUp();
+                } else {
+                    // 将爆炸过程画完再游戏结束清空画布
+                    gameOver();
+                }
+            })
+        }
+
+        /** 接住礼物 */
         function catchMoney () {
             moneyArray.forEach(function(item) {
                 if (item.isLive) {
-                    /** 判断礼物有没有进入小人范围 */
-                    if (item.x + (item.w / 2) <= people.x + people.w && item.x + (item.w / 2) >= people.x && item.y + (item.h / 2) <= people.y + people.h && item.y + (item.h / 2) >= people.y) {
+                    if (isCatch(item)) {
                         people.score += item.score;
                         item.isLive = false;
                         window.clearInterval(item.timer);
@@ -173,38 +192,83 @@
             })
         }
 
-        // 接住了炸弹
+        /** 接住了炸弹 */
         function catchBomb () {
-
+            bombArray.forEach(function (bomb) {
+                if (bomb.isLive) {
+                    if (isCatch(bomb)) {
+                        bomb.isLive = false;
+                        people.isLive = false;
+                        window.clearInterval(bomb.timer);
+                        var boom = new Boom(people.x, people.y);
+                        boomArray.push(boom);
+                    }
+                }
+            })
         }
 
-        // 刷新积分
+        /** 判断物品（礼物、炸弹）有没有进入小人范围 */
+        function isCatch (item) {
+            return (item.x + (item.w / 2) <= people.x + people.w && item.x + (item.w / 2) >= people.x && item.y + (item.h / 2) <= people.y + people.h && item.y + (item.h / 2) >= people.y);
+        }
+
+        /** 刷新积分 */
         function flashScore () {
             var score = document.getElementById('score');
             score.innerHTML = '积分: ' + people.score;
+        }
+
+        /** 游戏结束 */
+        function gameOver () {
+            /** 游戏结束关闭所有定时器 */
+            window.clearInterval(moneyTimer);
+            window.clearInterval(bombTimer);
+            window.clearInterval(flashTimer);
+
+            moneyArray.forEach(function (item) {
+                clearInterval(item.timer)
+            })
+
+            bombArray.forEach(function (item) {
+                clearInterval(item.timer)
+            })
+
+            ctx.fillStyle = '#eee';
+            ctx.fillRect(0, 0, 400, 500);
+
+            ctx.font = '50px Verdana';
+            var gradient = ctx.createLinearGradient(0, 0, 500, 0);
+            gradient.addColorStop('0', 'magenta');
+            gradient.addColorStop('0.5', 'blue');
+            gradient.addColorStop('1', 'red');
+
+            ctx.fillStyle = gradient;
+            ctx.fillText('GAME OVER!', 50, 200);
         }
 
         onload = function () {
             var canvas = document.getElementById('canvas');
             ctx = canvas.getContext('2d');
             ctx.fillStyle = '#eee';
-            ctx.fillRect(0, 0, 700, 900);
+            ctx.fillRect(0, 0, 400, 500);
 
             peopleImg = document.getElementById('people');
             yuanbao = document.getElementById('money');
             bombImg = document.getElementById('bomb');
+            boomImg = document.getElementById('boom');
 
             for (var i = 0; i < 2; i++) {
-                var money = new Money(Math.random() * (700 - 32), 0, 5, 40, 40);
+                var money = new Money(Math.random() * (400 - 32), 0, 5, 40, 40);
                 moneyArray.push(money);
                 window.setInterval('moneyArray[' + i + '].run()', 50);
             }
 
-            window.setInterval('moneyFactory()', 5000);
-            window.setInterval('bombFactory()', 10000);
-            window.setInterval('flashMap()', 50)
+            moneyTimer = window.setInterval('moneyFactory()', 5000);
+            bombTimer = window.setInterval('bombFactory()', 10000);
+            flashTimer = window.setInterval('flashMap()', 50);
         }
 
+        /** 键盘事件 */
         document.onkeydown = function () {
             var e = event || window.event || arguments.callee.caller.arguments[0];
             var flag = true;
@@ -215,8 +279,8 @@
                     }
                     break;
                 case 39:
-                    if (people.x + people.w < 700) {
-                        people.moveRight()
+                    if (people.x + people.w < 400) {
+                        people.moveRight();
                     }
                     break;
                 default:
@@ -229,9 +293,10 @@
 </head>
 <body>
     <h1 id="score">积分: 0</h1>
-    <canvas id="canvas" width="700" height="900"></canvas>
+    <canvas id="canvas" width="400" height="500"></canvas>
     <img id="people" src="img/people.png">
     <img id="money" src="img/liwu.png">
     <img id="bomb" src="img/bomb.png">
+    <img id="boom" src="img/boom.png">
 </body>
 </html>
